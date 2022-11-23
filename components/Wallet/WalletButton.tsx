@@ -38,7 +38,7 @@ const WalletButton = () => {
     if (isError) {
       return (
         <button
-          className="h-10 flex font-bold items-center px-4 py-4 justify-center rounded-md border-2 border-white shadow-md bg-red-300 text-black"
+          className="h-10 flex font-bold items-center px-4 py-4 justify-center rounded-md border-2 border-white shadow-md bg-red-400 text-black"
           onClick={handleConnectWallet}
         >
           Error connecting wallet. Try again.

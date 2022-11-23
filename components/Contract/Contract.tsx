@@ -3,32 +3,39 @@ import { useState, useEffect } from "react";
 import { AppContextInterface } from "../../context/AppContextTypes";
 import useAppContext from "../../context/AppContext";
 import Mint from "./Mint";
-import { BigNumber, Contract as ContractInterface, ethers } from "ethers";
+import {
+  BigNumber,
+  Contract as ContractInterface,
+  ethers,
+  Signer,
+} from "ethers";
 import { ExternalProvider } from "@ethersproject/providers";
 
-import { abi } from "../../contracts/StarkToken.json";
+import contractAbi from "../../contracts/StarkToken.json";
 import { contractAddress } from "../../contracts/StarkToken-address.json";
-import { StarkToken } from "../../contracts/types/contracts/StarkToken";
+import { StarkToken } from "../../contracts/types/StarkToken";
 import { WalletAddress } from "./Contract.d";
 
 export default function Contract() {
-  const { currentAccount } = useAppContext() as AppContextInterface;
+  const { currentAccount, isLogin } = useAppContext() as AppContextInterface;
   const [contractInst, setContractInst] = useState<ContractInterface>();
   const [balance, setBalance] = useState(0); // BigNumber
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   let provider;
-  let signer;
+  let signer: ethers.Signer;
 
   const contractSetUp = async () => {
     try {
       provider = new ethers.providers.Web3Provider(
         window.ethereum as ExternalProvider
       );
-      console.log(provider);
+      console.log(provider || "provider not set");
       signer = provider.getSigner();
-      console.log(signer);
-      setContractInst(new ethers.Contract(contractAddress, abi, signer));
+      console.log(signer || "signer not set");
+      setContractInst(
+        new ethers.Contract(contractAddress, contractAbi.abi, signer)
+      );
       console.log("Contract set up");
     } catch (error) {
       console.log("Contract setup failed", error);
@@ -61,16 +68,22 @@ export default function Contract() {
   }, []);
 
   return (
-    <div className="flex flex-col bg-slate-200 dark:bg-slate-900 m-auto mt-10 p-5 max-w-md rounded-md shadow-xl gap-5">
-      <div>
-        <h1>Balance</h1>
-        <div>{balance}</div>
-      </div>
-      <Mint
-        contractInst={contractInst as StarkToken}
-        currentAccount={currentAccount as WalletAddress}
-        getBalance={getBalance as () => Promise<ethers.BigNumber>}
-      />
+    <div className="flex flex-col bg-slate-100 dark:bg-slate-900 m-auto mt-10 p-5 max-w-md rounded-md shadow-xl gap-5">
+      {isLogin ? (
+        <>
+          <div className="flex flex-row text-2xl justify-between">
+            <h1>Stark tokens owned:</h1>
+            <p>{balance}</p>
+          </div>
+          <Mint
+            contractInst={contractInst as StarkToken}
+            currentAccount={currentAccount as WalletAddress}
+            getBalance={getBalance as () => Promise<ethers.BigNumber>}
+          />
+        </>
+      ) : (
+        <h2 className="m-auto">Your wallet is not connected.</h2>
+      )}
     </div>
   );
 }
