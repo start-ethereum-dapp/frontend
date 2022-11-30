@@ -1,89 +1,142 @@
-import { useState, useEffect } from "react";
+import { providers, Contract, ethers } from "ethers";
+import { useState, useRef, useEffect } from "react";
+import Web3Modal from "web3modal";
 
+import abi from "../../contracts/StarkToken.json";
 import { AppContextInterface } from "../../context/AppContextTypes";
+import contractAddress from "../../contracts/StarkToken-address.json";
 import useAppContext from "../../context/AppContext";
 import Mint from "./Mint";
-import {
-  BigNumber,
-  Contract as ContractInterface,
-  ethers,
-  Signer,
-} from "ethers";
-import { ExternalProvider } from "@ethersproject/providers";
 
-import contractAbi from "../../contracts/StarkToken.json";
-import { contractAddress } from "../../contracts/StarkToken-address.json";
-import { StarkToken } from "../../contracts/types/StarkToken";
-import { WalletAddress } from "./Contract.d";
-
-export default function Contract() {
-  const { currentAccount, isLogin } = useAppContext() as AppContextInterface;
-  const [contractInst, setContractInst] = useState<ContractInterface>();
-  const [balance, setBalance] = useState(0); // BigNumber
+export default function ContractComponent() {
+  const [curAddress, setCurAddress] = useState("");
+  const [currentAccount, setCurrentAccount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
-  let provider;
-  let signer: ethers.Signer;
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [walletConnected, setWalletConnected] = useState(false);
+  const [balance, setBalance] = useState(0);
+  const web3ModalRef = useRef() as React.MutableRefObject<Web3Modal>;
 
-  const contractSetUp = async () => {
+  const getProviderOrSigner = async (needSigner = false) => {
+    const provider = await web3ModalRef.current.connect();
+    const web3Provider = new providers.Web3Provider(provider);
+    const address = await web3Provider.getSigner().getAddress();
+    setCurAddress(address);
+    // If user is not connected to the Goerli network, let them know and throw an error
+    const { chainId } = await web3Provider.getNetwork();
+    if (chainId !== 5) {
+      window.alert("Change the network to Goerli");
+      throw new Error("Change network to Goerli");
+    }
+
+    if (needSigner) {
+      const signer = web3Provider.getSigner();
+      // console.log("SIGNER", signer);
+      return signer;
+    }
+    // console.log("PROVIDER", web3Provider);
+    return web3Provider;
+  };
+
+  const mintToken = async (amount: number) => {
     try {
-      provider = new ethers.providers.Web3Provider(
-        window.ethereum as ExternalProvider
+      const signer = await getProviderOrSigner(true);
+      const starkTokenContract = new Contract(
+        contractAddress.contractAddress,
+        abi.abi,
+        signer
       );
-      console.log(provider || "provider not set");
-      signer = provider.getSigner();
-      console.log(signer || "signer not set");
-      setContractInst(
-        new ethers.Contract(contractAddress, contractAbi.abi, signer)
-      );
-      console.log("Contract set up");
+      setIsLoading(true);
+      const transaction = await starkTokenContract.mint(amount);
+      await transaction.wait();
+      // console.log("TRANSACTION", transaction);
+      await getBalance();
+      setIsLoading(false);
+      setIsSuccess(true);
     } catch (error) {
-      console.log("Contract setup failed", error);
+      setIsLoading(false);
       setIsError(true);
     }
   };
 
   const getBalance = async () => {
     try {
-      const result = (await contractInst?.balanceOf(
-        currentAccount
-      )) as Promise<BigNumber>;
-      result && setBalance((await result).toNumber());
-      console.log("Balance of", currentAccount, "is", balance);
-      return result;
+      const provider = await getProviderOrSigner();
+      const starkTokenContract = new Contract(
+        contractAddress.contractAddress,
+        abi.abi,
+        provider
+      );
+      // console.log(curAddress);
+      const balance = await starkTokenContract.balanceOf(curAddress);
+      // console.log("BALANCE", balance);
+      setBalance(balance.toNumber());
     } catch (error) {
-      console.log("Error getting balance", error);
-      setIsError(true);
-      return error;
+      console.log(error); // ! consider to display error to user
     }
   };
 
-  console.log(contractInst);
+  const connectWallet = async () => {
+    try {
+      await getProviderOrSigner();
+      setWalletConnected(true);
+      await getBalance();
+      setIsSuccess(true);
+    } catch (error) {
+      setIsError(true);
+    }
+  };
 
   useEffect(() => {
-    setIsLoading(true);
-    contractSetUp();
-    getBalance();
-    setIsLoading(false);
-  }, []);
+    // if wallet is not connected, create a new instance of Web3Modal and connect the MetaMask wallet
+    if (!walletConnected) {
+      // Assign the Web3Modal class to the reference object by setting it's `current` value
+      // The `current` value is persisted throughout as long as this page is open
+      web3ModalRef.current = new Web3Modal({
+        network: "goerli",
+        providerOptions: {},
+        disableInjectedProvider: false,
+      });
+      connectWallet();
+    }
+  }, [walletConnected]);
 
-  return (
-    <div className="flex flex-col bg-slate-100 dark:bg-slate-900 m-auto mt-10 p-5 max-w-md rounded-md shadow-xl gap-5">
-      {isLogin ? (
+  const renderComponents = () => {
+    if (walletConnected) {
+      return (
         <>
-          <div className="flex flex-row text-2xl justify-between">
-            <h1>Stark tokens owned:</h1>
-            <p>{balance}</p>
+          <h1 className="text-3xl font-semibold">Stark token example</h1>
+          <div className="flex justify-between border-2 rounded-md p-2 bg-green-100 dark:text-black">
+            <h2 className="my-auto">Tokens owned</h2>
+            <p className="my-auto text-xl">{balance}</p>
           </div>
           <Mint
-            contractInst={contractInst as StarkToken}
-            currentAccount={currentAccount as WalletAddress}
-            getBalance={getBalance as () => Promise<ethers.BigNumber>}
+            mintToken={mintToken}
+            currentAccount={currentAccount}
+            walletConnected={walletConnected}
+            balance={balance}
           />
         </>
-      ) : (
-        <h2 className="m-auto">Your wallet is not connected.</h2>
-      )}
+      );
+    }
+
+    return (
+      <div className="flex flex-col justify-center items-center mt-10">
+        <p>Your wallet is not connected</p>
+        <button
+          onClick={connectWallet}
+          className="bg-black dark:bg-slate-200 text-white dark:text-black my-10 mx-auto px-4 py-2 rounded-md shadow-md"
+        >
+          Connect your wallet
+        </button>
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex flex-col bg-slate-100 dark:bg-slate-900 m-auto mt-10 p-5 max-w-md rounded-md shadow-xl gap-3">
+      {renderComponents()}
     </div>
   );
 }

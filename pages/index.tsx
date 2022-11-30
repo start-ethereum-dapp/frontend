@@ -1,7 +1,6 @@
 import Head from "next/head";
 
 import Header from "../components/Header/Header";
-import WalletButton from "../components/Wallet/WalletButton";
 import Contract from "../components/Contract/Contract";
 
 export default function Home() {
@@ -14,7 +13,6 @@ export default function Home() {
       </Head>
 
       <Header></Header>
-      <WalletButton></WalletButton>
       <Contract />
     </div>
   );

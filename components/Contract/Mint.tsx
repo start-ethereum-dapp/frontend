@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { CiCircleAlert } from "react-icons/ci";
 
@@ -8,47 +8,19 @@ import { AppContextInterface } from "../../context/AppContextTypes";
 import useAppContext from "../../context/AppContext";
 import { Theme, ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { StarkToken } from "../../contracts/types";
 
 export default function Mint({
-  contractInst,
+  mintToken,
   currentAccount,
-  getBalance,
+  walletConnected,
+  balance,
 }: ContractProps) {
   const theme: Theme = window.localStorage.getItem("theme") as Theme;
-  const { isLogin } = useAppContext() as AppContextInterface;
-  const [tokensToMint, setTokensToMint] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
-  const mint = async () => {
-    try {
-      console.log("Minting...");
-      const tx = await contractInst.mint(currentAccount, tokensToMint, {
-        value: tokensToMint * 500000000000000,
-      });
-      const result = await tx.wait();
-      console.log("Minted");
-      notifySuccess("1 token minted successfully");
-      return result;
-    } catch (error) {
-      console.log("Error minting", error);
-      notifyError("Error minting");
-      setIsError(true);
-      return error;
-    }
-  };
-
-  const handleMint = async () => {
-    setIsLoading(true);
-    const res = await mint();
-    if (res) {
-      await getBalance();
-      console.log(res);
-    }
-    setIsLoading(false);
-  };
-
-  // todo: fix toastId
   const notifyError = (message: string) =>
     toast.error(message, {
       position: toast.POSITION.TOP_CENTER,
@@ -62,7 +34,6 @@ export default function Mint({
       theme: theme,
     });
 
-  // todo: fix toastId
   const notifySuccess = (message: string) => {
     toast.success(message, {
       position: toast.POSITION.TOP_CENTER,
@@ -77,6 +48,20 @@ export default function Mint({
     });
   };
 
+  const handleMint = async () => {
+    try {
+      setIsLoading(true);
+      await mintToken(1);
+      setIsLoading(false);
+      setIsSuccess(true);
+      notifySuccess("Minted!");
+    } catch (error) {
+      setIsLoading(false);
+      setIsError(true);
+      notifyError("Error minting");
+    }
+  };
+
   return (
     <>
       <ToastContainer />
@@ -87,7 +72,7 @@ export default function Mint({
           <button
             className="bg-gray-900 dark:bg-black text-white font-bold py-2 px-4 rounded"
             onClick={handleMint}
-            disabled={!isLogin || isLoading}
+            disabled={!walletConnected || balance === 10}
           >
             {!isLoading ? (
               "MINT"
@@ -96,11 +81,13 @@ export default function Mint({
             )}
           </button>
         </div>
-        <div className="flex gap-2 mt-7 text-sm text-slate-700 dark:text-slate-400">
-          <CiCircleAlert className="my-auto" />
-          <p className="">
-            Each token have a price of <strong>0.0005 ETH</strong>
-          </p>
+        <div className="flex flex-col gap-2 mt-5 text-sm text-slate-700 dark:text-slate-400">
+          <div className="flex gap-3 text-red-500">
+            <CiCircleAlert className="my-auto" />
+            <p>
+              <strong>You can mint 10 tokens max.</strong>
+            </p>
+          </div>
         </div>
       </div>
     </>
