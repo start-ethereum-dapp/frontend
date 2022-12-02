@@ -4,17 +4,16 @@ import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { CiCircleAlert } from "react-icons/ci";
 
 import { ContractProps } from "./Contract.d";
-import { AppContextInterface } from "../../context/AppContextTypes";
-import useAppContext from "../../context/AppContext";
 import { Theme, ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import useContractContext, { ContractContext } from "../../hooks/Contract";
+// ! todo
 
 export default function Transfer() {
   const theme: Theme = window.localStorage.getItem("theme") as Theme;
-  const { isLogin } = useAppContext() as AppContextInterface;
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
-
+  const { walletConnected } = useContractContext() as ContractContext;
   //   const notifyError = (message: string) =>
   //     toast.error(message, {
   //       position: toast.POSITION.TOP_CENTER,
@@ -59,7 +58,7 @@ export default function Transfer() {
             <button
               className="bg-gray-900 dark:bg-black text-white font-bold py-2 px-4 rounded"
               type="submit"
-              disabled={!isLogin || isLoading}
+              disabled={!walletConnected || isLoading}
             >
               {!isLoading ? (
                 "TRANSFER"

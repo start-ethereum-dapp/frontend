@@ -1,15 +1,16 @@
-import { AppContextProvider } from "../context/AppContext";
+import { AppContextProvider } from "../hooks/AppContext";
 import { ThemeProvider } from "next-themes";
 import "../styles/globals.css";
+import { EthereumContextProvider } from "../hooks/Contract";
 
-function MyApp({ Component, pageProps }: any) {
+function App({ Component, pageProps }: any) {
   return (
-    <AppContextProvider>
-      <ThemeProvider attribute="class">
+    <ThemeProvider attribute="class">
+      <EthereumContextProvider>
         <Component {...pageProps} />
-      </ThemeProvider>
-    </AppContextProvider>
+      </EthereumContextProvider>
+    </ThemeProvider>
   );
 }
 
-export default MyApp;
+export default App;

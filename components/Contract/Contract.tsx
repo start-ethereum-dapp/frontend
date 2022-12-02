@@ -1,43 +1,23 @@
-import { providers, Contract, ethers } from "ethers";
-import { useState, useRef, useEffect } from "react";
-import Web3Modal from "web3modal";
+import { Contract } from "ethers";
+import { useState, useEffect } from "react";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
 import abi from "../../contracts/StarkToken.json";
-import { AppContextInterface } from "../../context/AppContextTypes";
 import contractAddress from "../../contracts/StarkToken-address.json";
-import useAppContext from "../../context/AppContext";
 import Mint from "./Mint";
+import useContractContext, { ContractContext } from "../../hooks/Contract";
 
 export default function ContractComponent() {
-  const [curAddress, setCurAddress] = useState("");
-  const [currentAccount, setCurrentAccount] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isQuerying, setIsQuerying] = useState(false);
   const [isError, setIsError] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [walletConnected, setWalletConnected] = useState(false);
   const [balance, setBalance] = useState(0);
-  const web3ModalRef = useRef() as React.MutableRefObject<Web3Modal>;
-
-  const getProviderOrSigner = async (needSigner = false) => {
-    const provider = await web3ModalRef.current.connect();
-    const web3Provider = new providers.Web3Provider(provider);
-    const address = await web3Provider.getSigner().getAddress();
-    setCurAddress(address);
-    // If user is not connected to the Goerli network, let them know and throw an error
-    const { chainId } = await web3Provider.getNetwork();
-    if (chainId !== 5) {
-      window.alert("Change the network to Goerli");
-      throw new Error("Change network to Goerli");
-    }
-
-    if (needSigner) {
-      const signer = web3Provider.getSigner();
-      // console.log("SIGNER", signer);
-      return signer;
-    }
-    // console.log("PROVIDER", web3Provider);
-    return web3Provider;
-  };
+  const {
+    getProviderOrSigner,
+    userAddress,
+    walletConnected,
+    connectWallet,
+  }: ContractContext = useContractContext() as ContractContext;
 
   const mintToken = async (amount: number) => {
     try {
@@ -47,21 +27,16 @@ export default function ContractComponent() {
         abi.abi,
         signer
       );
-      setIsLoading(true);
       const transaction = await starkTokenContract.mint(amount);
       await transaction.wait();
       // console.log("TRANSACTION", transaction);
       await getBalance();
-      setIsLoading(false);
-      setIsSuccess(true);
-    } catch (error) {
-      setIsLoading(false);
-      setIsError(true);
-    }
+    } catch (error) {}
   };
 
   const getBalance = async () => {
     try {
+      setIsQuerying(true);
       const provider = await getProviderOrSigner();
       const starkTokenContract = new Contract(
         contractAddress.contractAddress,
@@ -69,22 +44,16 @@ export default function ContractComponent() {
         provider
       );
       // console.log(curAddress);
-      const balance = await starkTokenContract.balanceOf(curAddress);
+
+      const balance = await starkTokenContract.balanceOf(userAddress);
       // console.log("BALANCE", balance);
       setBalance(balance.toNumber());
+      setIsQuerying(false);
     } catch (error) {
       console.log(error); // ! consider to display error to user
-    }
-  };
-
-  const connectWallet = async () => {
-    try {
-      await getProviderOrSigner();
-      setWalletConnected(true);
-      await getBalance();
-      setIsSuccess(true);
-    } catch (error) {
+      setIsQuerying(false);
       setIsError(true);
+      setIsSuccess(false);
     }
   };
 
@@ -93,11 +62,7 @@ export default function ContractComponent() {
     if (!walletConnected) {
       // Assign the Web3Modal class to the reference object by setting it's `current` value
       // The `current` value is persisted throughout as long as this page is open
-      web3ModalRef.current = new Web3Modal({
-        network: "goerli",
-        providerOptions: {},
-        disableInjectedProvider: false,
-      });
+
       connectWallet();
     }
   }, [walletConnected]);
@@ -107,13 +72,28 @@ export default function ContractComponent() {
       return (
         <>
           <h1 className="text-3xl font-semibold">Stark token example</h1>
-          <div className="flex justify-between border-2 rounded-md p-2 bg-green-100 dark:text-black">
-            <h2 className="my-auto">Tokens owned</h2>
-            <p className="my-auto text-xl">{balance}</p>
+          <div>
+            <div className="flex justify-between border-2 rounded-md p-2 bg-green-100 dark:text-black">
+              <h2 className="my-auto">Tokens owned</h2>
+              <p className="my-auto text-xl">{balance}</p>
+            </div>
+            <div className="flex h-5 gap-2 justify-bet my-2">
+              <p
+                onClick={getBalance}
+                className="text-sm border-b cursor-pointer hover:border-blue-200 hover:border-b-2"
+              >
+                Can't see your balances? Try to refresh{" "}
+              </p>
+              {isQuerying ? (
+                <AiOutlineLoading3Quarters className="animate-spin my-auto" />
+              ) : (
+                <></>
+              )}
+            </div>
           </div>
           <Mint
             mintToken={mintToken}
-            currentAccount={currentAccount}
+            currentAccount={userAddress}
             walletConnected={walletConnected}
             balance={balance}
           />

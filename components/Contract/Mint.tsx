@@ -4,11 +4,8 @@ import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { CiCircleAlert } from "react-icons/ci";
 
 import { ContractProps } from "./Contract.d";
-import { AppContextInterface } from "../../context/AppContextTypes";
-import useAppContext from "../../context/AppContext";
 import { Theme, ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { StarkToken } from "../../contracts/types";
 
 export default function Mint({
   mintToken,
