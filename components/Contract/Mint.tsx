@@ -1,5 +1,4 @@
-import { useState, useEffect, useRef } from "react";
-import { BigNumber, ethers } from "ethers";
+import { useState, useEffect } from "react";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { CiCircleAlert } from "react-icons/ci";
 
@@ -9,7 +8,6 @@ import "react-toastify/dist/ReactToastify.css";
 
 export default function Mint({
   mintToken,
-  currentAccount,
   walletConnected,
   balance,
 }: ContractProps) {

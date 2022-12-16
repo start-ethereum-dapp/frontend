@@ -1,4 +1,4 @@
-import WalletButton from "../Wallet/WalletButton";
+import WalletAddress from "../Contract/WalletAddress";
 import ToggleTheme from "./ToggleTheme";
 
 const Header = () => {
@@ -7,7 +7,10 @@ const Header = () => {
       <h1 className="font-bold my-auto text-2xl text-start">
         start-eth-dapp 🌠
       </h1>
-      <ToggleTheme />
+      <div className="flex gap-10">
+        <WalletAddress />
+        <ToggleTheme />
+      </div>
     </header>
   );
 };

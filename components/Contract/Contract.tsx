@@ -29,9 +29,11 @@ export default function ContractComponent() {
       );
       const transaction = await starkTokenContract.mint(amount);
       await transaction.wait();
-      // console.log("TRANSACTION", transaction);
+      console.log("TRANSACTION", transaction);
       await getBalance();
-    } catch (error) {}
+    } catch (error) {
+      window.alert(error);
+    }
   };
 
   const getBalance = async () => {
@@ -43,10 +45,10 @@ export default function ContractComponent() {
         abi.abi,
         provider
       );
-      // console.log(curAddress);
+      console.log(userAddress);
 
       const balance = await starkTokenContract.balanceOf(userAddress);
-      // console.log("BALANCE", balance);
+      console.log("BALANCE", balance);
       setBalance(balance.toNumber());
       setIsQuerying(false);
     } catch (error) {
