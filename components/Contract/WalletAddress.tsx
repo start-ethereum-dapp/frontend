@@ -1,6 +1,8 @@
 import { BiCopy } from "react-icons/bi";
 
-import useContractContext, { ContractContext } from "../../hooks/Contract";
+import useContractContext, {
+  ContractContext,
+} from "../../hooks/ContractContext";
 import { copyToClipboard } from "../../lib/utils";
 import { useState } from "react";
 
@@ -27,13 +29,13 @@ export default function WalletAddress() {
     <>
       {walletConnected ? (
         <button
-          className="flex gap-2 m-auto bg-black px-3 py-2 rounded-md"
+          className="flex gap-2 m-auto bg-black px-3 py-2 rounded-md text-white"
           onClick={handleOnClick}
         >
           <BiCopy
             className={`m-auto ${
               isClicked
-                ? "bg-green-300 p-1 transition-all text-black rounded-full"
+                ? "bg-green-300 p-1 transition-all text-white rounded-full"
                 : ""
             }`}
           />{" "}

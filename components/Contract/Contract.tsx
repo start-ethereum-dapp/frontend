@@ -1,11 +1,15 @@
-import { Contract } from "ethers";
+import { Contract, ContractTransaction } from "ethers";
 import { useState, useEffect } from "react";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
 import abi from "../../contracts/StarkToken.json";
 import contractAddress from "../../contracts/StarkToken-address.json";
 import Mint from "./Mint";
-import useContractContext, { ContractContext } from "../../hooks/Contract";
+import useContractContext, {
+  ContractContext,
+} from "../../hooks/ContractContext";
+import Transfer from "./Transfer";
+import { StarkToken } from "../../contracts/types";
 
 export default function ContractComponent() {
   const [isQuerying, setIsQuerying] = useState(false);
@@ -29,10 +33,27 @@ export default function ContractComponent() {
       );
       const transaction = await starkTokenContract.mint(amount);
       await transaction.wait();
-      console.log("TRANSACTION", transaction);
+      console.log("MINT", transaction);
       await getBalance();
     } catch (error) {
-      window.alert(error);
+      throw new Error();
+    }
+  };
+
+  const transferToken = async (to: string, amount: number) => {
+    try {
+      const signer = await getProviderOrSigner(true);
+      const startTokenContract = new Contract(
+        contractAddress.contractAddress,
+        abi.abi,
+        signer
+      ) as StarkToken;
+      const transaction = await startTokenContract.transfer(to, amount);
+      await transaction.wait();
+      console.log("TRANSFER", transaction);
+      await getBalance();
+    } catch (error) {
+      throw new Error("Transfer failed");
     }
   };
 
@@ -45,14 +66,14 @@ export default function ContractComponent() {
         abi.abi,
         provider
       );
-      console.log(userAddress);
+      console.log("USER ADDRESS", userAddress);
 
       const balance = await starkTokenContract.balanceOf(userAddress);
       console.log("BALANCE", balance);
       setBalance(balance.toNumber());
       setIsQuerying(false);
     } catch (error) {
-      console.log(error); // ! consider to display error to user
+      console.log("ERROR GETTING BALANCE", error); // ! consider to display error to user
       setIsQuerying(false);
       setIsError(true);
       setIsSuccess(false);
@@ -66,6 +87,10 @@ export default function ContractComponent() {
       // The `current` value is persisted throughout as long as this page is open
 
       connectWallet();
+    }
+
+    if (walletConnected) {
+      getBalance();
     }
   }, [walletConnected]);
 
@@ -99,6 +124,7 @@ export default function ContractComponent() {
             walletConnected={walletConnected}
             balance={balance}
           />
+          <Transfer transferToken={transferToken} />
         </>
       );
     }

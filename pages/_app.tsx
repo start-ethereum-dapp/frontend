@@ -1,7 +1,6 @@
-import { AppContextProvider } from "../hooks/AppContext";
 import { ThemeProvider } from "next-themes";
 import "../styles/globals.css";
-import { EthereumContextProvider } from "../hooks/Contract";
+import { EthereumContextProvider } from "../hooks/ContractContext";
 
 function App({ Component, pageProps }: any) {
   return (

@@ -65,14 +65,14 @@ export default function Mint({
           {" "}
           <h2 className="my-auto text-xl">Mint 1 token</h2>
           <button
-            className="bg-gray-900 dark:bg-black text-white font-bold py-2 px-4 rounded"
+            className="bg-gray-900 dark:bg-black text-white font-bold py-2 px-4 rounded h-10"
             onClick={handleMint}
             disabled={!walletConnected || balance === 10}
           >
             {!isLoading ? (
               "MINT"
             ) : (
-              <AiOutlineLoading3Quarters className="animate-spin" />
+              <AiOutlineLoading3Quarters className="animate-spin m-auto" />
             )}
           </button>
         </div>
